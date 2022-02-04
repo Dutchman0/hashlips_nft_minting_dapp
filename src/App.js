@@ -240,6 +240,7 @@ function App() {
         .on("receipt", function (receipt) {
             console.log(receipt);
             getPrice();
+            setClaimingNft(false);
         })
         .on("error", function (error, receipt) {
             console.log(error);
