@@ -1,9 +1,84 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { connect } from "./redux/blockchain/blockchainActions";
-import { fetchData } from "./redux/data/dataActions";
 import * as s from "./styles/globalStyles";
 import styled from "styled-components";
+import Onboard from "bnc-onboard";
+import Web3 from "web3";
+import ABI from "./contractABI.json";
+
+const contractAddress = "0x818d2BF9C147eca37bD7cadF98411e60cEbae6AA";
+
+const FORTMATIC_KEY = "pk_live_4EDB573BE50A49CE";
+const RPC_URL = "https://mainnet.infura.io/v3/31a345975dc8409eb4e7b061b7980f5d";
+const INFURA_KEY = "31a345975dc8409eb4e7b061b7980f5d";
+const CONTACT_EMAIL = "meerkatsupport@moodymeerkatsafariclub.com";
+const APP_NAME = "Moody Meerkat Safari Club";
+const PORTIS_KEY = "5141f8a5-c2ad-4765-8235-795bf153ef88";
+const APP_URL = "https://www.moodymeerkatsafariclub.com"
+
+const wallets = [
+  { walletName: "coinbase", preferred: true },
+  { walletName: "trust", preferred: true, rpcUrl: RPC_URL },
+  { walletName: "metamask", preferred: true },
+  { walletName: "authereum" },
+  { walletName: "ledger", rpcUrl: RPC_URL },
+  { walletName: "fortmatic", apiKey: FORTMATIC_KEY, preferred: true },
+  { walletName: "walletConnect", infuraKey: INFURA_KEY },
+  { walletName: "opera" },
+  { walletName: "operaTouch" },
+  { walletName: "torus" },
+  { walletName: "status" },
+  { walletName: "imToken", rpcUrl: RPC_URL }, 
+  { walletName: 'trezor', appUrl: APP_URL, email: CONTACT_EMAIL, rpcUrl: RPC_URL},
+  { walletName: 'lattice', rpcUrl: RPC_URL, appName: APP_NAME},
+  { walletName: 'keepkey', rpcUrl: RPC_URL},
+  { walletName: 'cobovault', rpcUrl: RPC_URL, appName: APP_NAME,},
+  { walletName: 'keystone', rpcUrl: RPC_URL, appName: APP_NAME},
+  { walletName: "portis", apiKey: PORTIS_KEY, preferred: true, label: 'Login with Email'},
+  { walletName: "walletLink", rpcUrl: RPC_URL, appName: APP_NAME },
+  { walletName: "meetone" },
+  { walletName: "mykey", rpcUrl: RPC_URL },
+  { walletName: "huobiwallet", rpcUrl: RPC_URL },
+  { walletName: "hyperpay" },
+  { walletName: "wallet.io", rpcUrl: RPC_URL },
+  { walletName: "atoken" },
+  { walletName: "frame" },
+  { walletName: "ownbit" },
+  { walletName: "alphawallet" },
+  { walletName: "gnosis" },
+  { walletName: "xdefi" },
+  { walletName: "bitpie" },
+  { walletName: "binance" },
+  { walletName: "liquality" },
+  { walletName: "tally" },
+  { walletName: "blankwallet" },
+  { walletName: "mathwallet" },
+  { walletName: "1inch" },
+  { walletName: "ronin" }
+];
+
+var web3;
+
+var myContract;
+var totalMinted = 0;
+var connected =false;
+
+const onboard = Onboard({
+  dappId: "d86c8312-381b-48e7-8a3b-dcacb5f6d89b",
+  networkId: 1,
+  walletSelect: {
+      wallets: wallets
+  },
+  subscriptions: {
+      wallet: (wallet) => {
+          window.localStorage.setItem("selectedWallet", wallet.name);
+          web3 = new Web3(wallet.provider);
+          console.log(wallet.name);
+          myContract = new web3.eth.Contract(ABI, contractAddress)
+      }
+  }
+});
+
+
 
 const truncate = (input, len) =>
   input.length > len ? `${input.substring(0, len)}...` : input;
@@ -95,19 +170,18 @@ export const StyledLink = styled.a`
 `;
 
 function App() {
-  const dispatch = useDispatch();
-  const blockchain = useSelector((state) => state.blockchain);
-  const data = useSelector((state) => state.data);
   const [claimingNft, setClaimingNft] = useState(false);
   const [feedback, setFeedback] = useState(`Click buy to mint your NFT.`);
   const [mintAmount, setMintAmount] = useState(1);
+  const [connected, setConnected] = useState(false);
+  const [totalMinted,setTotalMinted] = useState(0);
   const [CONFIG, SET_CONFIG] = useState({
-    CONTRACT_ADDRESS: "",
+    CONTRACT_ADDRESS: contractAddress,
     SCAN_LINK: "",
     NETWORK: {
       NAME: "",
       SYMBOL: "",
-      ID: 0,
+      ID: 1,
     },
     NFT_NAME: "",
     SYMBOL: "",
@@ -120,7 +194,31 @@ function App() {
     SHOW_BACKGROUND: false,
   });
 
-  const claimNFTs = () => {
+
+  async function login() {
+    const walletSelected = await onboard.walletSelect();
+    if (walletSelected) {
+        const walletCheck = await onboard.walletCheck();
+        setConnected(true)
+        getTotalMinted();
+    }else{console.log("you're a wanker")}
+  }
+  
+  async function getTotalMinted() {
+    const currentState = onboard.getState();
+    myContract.methods.totalSupply()
+        .call()
+        .then((res) => {
+            setTotalMinted(res)
+        })
+        .catch((err) => {
+            console.log(err);
+        })
+  }
+
+
+
+  const claimNFTs = async () => {
     let cost = CONFIG.WEI_COST;
     let gasLimit = CONFIG.GAS_LIMIT;
     let totalCostWei = String(cost * mintAmount);
@@ -129,27 +227,50 @@ function App() {
     console.log("Gas limit: ", totalGasLimit);
     setFeedback(`Minting your ${CONFIG.NFT_NAME}...`);
     setClaimingNft(true);
-    blockchain.smartContract.methods
-      .mint(mintAmount)
-      .send({
-        gasLimit: String(totalGasLimit),
-        to: CONFIG.CONTRACT_ADDRESS,
-        from: blockchain.account,
-        value: totalCostWei,
-      })
-      .once("error", (err) => {
-        console.log(err);
-        setFeedback("Sorry, something went wrong please try again later.");
-        setClaimingNft(false);
-      })
-      .then((receipt) => {
-        console.log(receipt);
-        setFeedback(
-          `WOW, the ${CONFIG.NFT_NAME} is yours! go visit Opensea.io to view it.`
-        );
-        setClaimingNft(false);
-        dispatch(fetchData(blockchain.account));
-      });
+
+    const currentState = onboard.getState();
+    myContract.methods.mint(mintAmount)
+        .send({ from: currentState.address, value: cost })
+        .on("transactionHash", function (hash) {
+            console.log(hash);
+        })
+        .on("confirmation", function (confirmationNumber, reciept) {
+            console.log(confirmationNumber);
+        })
+        .on("receipt", function (receipt) {
+            console.log(receipt);
+            getPrice();
+        })
+        .on("error", function (error, receipt) {
+            console.log(error);
+        })
+        .catch(err => {
+            console.log(err);
+        });    
+
+
+    //USELESS HASLIPS CODE
+    // blockchain.smartContract.methods
+    //   .mint(mintAmount)
+    //   .send({
+    //     gasLimit: String(totalGasLimit),
+    //     to: CONFIG.CONTRACT_ADDRESS,
+    //     from: blockchain.account,
+    //     value: totalCostWei,
+    //   })
+    //   .once("error", (err) => {
+    //     console.log(err);
+    //     setFeedback("Sorry, something went wrong please try again later.");
+    //     setClaimingNft(false);
+    //   })
+    //   .then((receipt) => {
+    //     console.log(receipt);
+    //     setFeedback(
+    //       `WOW, the ${CONFIG.NFT_NAME} is yours! go visit Opensea.io to view it.`
+    //     );
+    //     setClaimingNft(false);
+    //     dispatch(fetchData(blockchain.account));
+    //   });
   };
 
   const decrementMintAmount = () => {
@@ -169,9 +290,14 @@ function App() {
   };
 
   const getData = () => {
-    if (blockchain.account !== "" && blockchain.smartContract !== null) {
-      dispatch(fetchData(blockchain.account));
+    if(connected){
+      return onboard.getState().address
+    }else{
+      return "Connect yer fookin wallet"
     }
+    // if (blockchain.account !== "" && blockchain.smartContract !== null) {
+    //   dispatch(fetchData(blockchain.account));
+    // }
   };
 
   const getConfig = async () => {
@@ -189,9 +315,9 @@ function App() {
     getConfig();
   }, []);
 
-  useEffect(() => {
-    getData();
-  }, [blockchain.account]);
+  // useEffect(() => {
+  //   getData();
+  // }, [blockchain.account]);
 
   return (
     <s.Screen>
@@ -228,7 +354,7 @@ function App() {
                 color: "var(--accent-text)",
               }}
             >
-              {data.totalSupply} / {CONFIG.MAX_SUPPLY}
+              {totalMinted} / {CONFIG.MAX_SUPPLY}
             </s.TextTitle>
             <s.TextDescription
               style={{
@@ -241,7 +367,7 @@ function App() {
               </StyledLink>
             </s.TextDescription>
             <s.SpacerSmall />
-            {Number(data.totalSupply) >= CONFIG.MAX_SUPPLY ? (
+            {Number(totalMinted) >= CONFIG.MAX_SUPPLY ? (
               <>
                 <s.TextTitle
                   style={{ textAlign: "center", color: "var(--accent-text)" }}
@@ -273,8 +399,7 @@ function App() {
                   Excluding gas fees.
                 </s.TextDescription>
                 <s.SpacerSmall />
-                {blockchain.account === "" ||
-                blockchain.smartContract === null ? (
+                {!connected ? (
                   <s.Container ai={"center"} jc={"center"}>
                     <s.TextDescription
                       style={{
@@ -288,13 +413,15 @@ function App() {
                     <StyledButton
                       onClick={(e) => {
                         e.preventDefault();
-                        dispatch(connect());
+                        login();
                         getData();
                       }}
                     >
                       CONNECT
                     </StyledButton>
-                    {blockchain.errorMsg !== "" ? (
+
+                    
+                    {/* {blockchain.errorMsg !== "" ? (
                       <>
                         <s.SpacerSmall />
                         <s.TextDescription
@@ -306,7 +433,7 @@ function App() {
                           {blockchain.errorMsg}
                         </s.TextDescription>
                       </>
-                    ) : null}
+                    ) : null} */}
                   </s.Container>
                 ) : (
                   <>
@@ -380,7 +507,7 @@ function App() {
         </ResponsiveWrapper>
         <s.SpacerMedium />
         <s.Container jc={"center"} ai={"center"} style={{ width: "70%" }}>
-          <s.TextDescription
+          {/* <s.TextDescription
             style={{
               textAlign: "center",
               color: "var(--primary-text)",
@@ -389,7 +516,7 @@ function App() {
             Please make sure you are connected to the right network (
             {CONFIG.NETWORK.NAME} Mainnet) and the correct address. Please note:
             Once you make the purchase, you cannot undo this action.
-          </s.TextDescription>
+          </s.TextDescription> */}
           <s.SpacerSmall />
           <s.TextDescription
             style={{

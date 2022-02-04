@@ -1,18 +1,18 @@
 {
-  "CONTRACT_ADDRESS": "0x827acb09a2dc20e39c9aad7f7190d9bc53534192",
-  "SCAN_LINK": "https://polygonscan.com/token/0x827acb09a2dc20e39c9aad7f7190d9bc53534192",
+  "CONTRACT_ADDRESS": "0x818d2BF9C147eca37bD7cadF98411e60cEbae6AA",
+  "SCAN_LINK": "https://etherscan.io/address/0x818d2bf9c147eca37bd7cadf98411e60cebae6aa",
   "NETWORK": {
-    "NAME": "Polygon",
-    "SYMBOL": "Matic",
-    "ID": 137
-  },
-  "NFT_NAME": "Nerdy Coder Clones",
-  "SYMBOL": "NCC",
-  "MAX_SUPPLY": 1000,
-  "WEI_COST": 75000000000000000,
-  "DISPLAY_COST": 0.075,
+    "NAME": "Ethereum",
+    "SYMBOL": "Eth",
+    "ID": 1
+    },
+  "NFT_NAME": "Moody Meerkat Safari Club",
+  "SYMBOL": "MMSC",
+  "MAX_SUPPLY": 5000,
+  "WEI_COST": 40000000000000000,
+  "DISPLAY_COST": 0.04,
   "GAS_LIMIT": 285000,
   "MARKETPLACE": "Opeansea",
-  "MARKETPLACE_LINK": "https://opensea.io/collection/nerdy-coder-clones",
-  "SHOW_BACKGROUND": true
+  "MARKETPLACE_LINK": "https://opensea.io/collection/moodymeerkatsafariclub-1",
+  "SHOW_BACKGROUND": false
 }
