@@ -246,32 +246,8 @@ function App() {
         })
         .catch(err => {
             console.log(err);
-        });    
-
-
-    //USELESS HASLIPS CODE
-    // blockchain.smartContract.methods
-    //   .mint(mintAmount)
-    //   .send({
-    //     gasLimit: String(totalGasLimit),
-    //     to: CONFIG.CONTRACT_ADDRESS,
-    //     from: blockchain.account,
-    //     value: totalCostWei,
-    //   })
-    //   .once("error", (err) => {
-    //     console.log(err);
-    //     setFeedback("Sorry, something went wrong please try again later.");
-    //     setClaimingNft(false);
-    //   })
-    //   .then((receipt) => {
-    //     console.log(receipt);
-    //     setFeedback(
-    //       `WOW, the ${CONFIG.NFT_NAME} is yours! go visit Opensea.io to view it.`
-    //     );
-    //     setClaimingNft(false);
-    //     dispatch(fetchData(blockchain.account));
-    //   });
-  };
+        });      
+    };
 
   const decrementMintAmount = () => {
     let newMintAmount = mintAmount - 1;
